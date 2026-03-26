@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getMaterials } from '../services/materialService';
-import { createOrder } from '../services/orderService';
+import { createOrder, sendInvoiceEmail } from '../services/orderService';
 import { useAuth } from '../context/AuthContext';
+import { auth } from '../../config/Firebase';
 import { CreditCard, Banknote, Landmark, Truck, Loader2, CheckCircle2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import RazorpayButton from '../../components/RazorpayButton';
@@ -29,6 +30,57 @@ export default function OrderPage() {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+
+  const resolveCustomerEmail = () => {
+    if (user?.email) return user.email;
+    if (auth.currentUser?.email) return auth.currentUser.email;
+    try {
+      const raw = localStorage.getItem('user');
+      const parsed = raw ? JSON.parse(raw) : null;
+      return parsed?.email || '';
+    } catch {
+      return '';
+    }
+  };
+
+  const sendInvoiceForOrder = async ({ orderId, razorpayPaymentId, razorpayOrderId }) => {
+    const customerEmail = resolveCustomerEmail();
+    if (!customerEmail) {
+      alert('Order placed, but no account email found for invoice delivery. Please update your profile email.');
+      return;
+    }
+
+    try {
+      await sendInvoiceEmail({
+        orderId,
+        customer: {
+          name: user?.name || 'Customer',
+          email: customerEmail,
+          phone: user?.phone || '',
+          address: form.deliveryAddress,
+          city: '',
+          state: '',
+          pincode: '',
+        },
+        items: [
+          {
+            name: material.yarnType,
+            category: material.materialCode,
+            price: Number(material.pricePerMeter || 0),
+            quantity: Number(form.quantity || 0),
+          },
+        ],
+        total,
+        payment: {
+          razorpay_payment_id: razorpayPaymentId,
+          razorpay_order_id: razorpayOrderId,
+        },
+      });
+    } catch (mailError) {
+      console.warn('Invoice email failed:', mailError.message);
+      alert('Order placed, but invoice email could not be sent.');
+    }
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -61,13 +113,14 @@ export default function OrderPage() {
     }
 
     try {
-      await createOrder({
+      const createdOrder = await createOrder({
         materialId: material._id,
         quantity: Number(form.quantity),
         color: form.color,
         paymentMethod: form.paymentMethod,
         deliveryAddress: form.deliveryAddress,
       });
+      await sendInvoiceForOrder({ orderId: createdOrder.id || createdOrder._id });
       // Navigate to the newly created orders page
       navigate('/orders');
     } catch (error) {
@@ -153,22 +206,27 @@ export default function OrderPage() {
     onSuccess={async (res) => {
       setIsProcessing(true);
       try {
-        await createOrder({
+        const createdOrder = await createOrder({
           materialId: material._id,
           quantity: Number(form.quantity),
           color: form.color,
           paymentMethod: 'Razorpay',
           deliveryAddress: form.deliveryAddress,
         });
+        await sendInvoiceForOrder({
+          orderId: createdOrder.id || createdOrder._id,
+          razorpayPaymentId: res?.razorpay_payment_id,
+          razorpayOrderId: res?.razorpay_order_id,
+        });
         setPaymentSuccess(true);
         setTimeout(() => navigate('/my-orders'), 1500);
       } catch (err) {
         setIsProcessing(false);
-        setError('Order failed after payment. ' + err.message);
+        alert('Order failed after payment. ' + err.message);
       }
     }}
     onCancel={(err) => {
-       setError('Payment cancelled or failed');
+       alert('Payment cancelled or failed');
     }}
   /> 
 </div>

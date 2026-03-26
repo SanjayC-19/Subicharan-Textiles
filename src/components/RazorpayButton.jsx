@@ -55,7 +55,7 @@ export default function RazorpayButton({ amount, onSuccess, onCancel, onError, c
         key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_SVtxwS1gIf2WRT',
         amount: order.amount,
         currency: order.currency,
-        name: 'Subicharan Textiles',
+        name: 'Subitcharan Tex',
         description: 'Payment for your order',
         order_id: order.id,
         handler: async function (response) {
@@ -86,7 +86,7 @@ export default function RazorpayButton({ amount, onSuccess, onCancel, onError, c
           contact: customer?.phone || '',
         },
         notes: {
-          store: 'Subicharan Textiles',
+          store: 'Subitcharan Tex',
         },
         theme: {
           color: '#2B7BFF',

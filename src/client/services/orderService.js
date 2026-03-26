@@ -12,6 +12,8 @@ import {
 } from 'firebase/firestore';
 import { db } from '../../config/Firebase';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
 const ORDERS_COLLECTION = 'orders';
 const MATERIALS_COLLECTION = 'materials';
 
@@ -65,7 +67,8 @@ export const createOrder = async (payload) => {
 	}
 
 	const user = readStoredUser();
-	if (!user?._id) {
+	const userId = user?._id || user?.uid;
+	if (!userId) {
 		throw new Error('Please log in before placing an order.');
 	}
 
@@ -103,9 +106,9 @@ export const createOrder = async (payload) => {
 	});
 
 	const orderRef = await addDoc(collection(db, ORDERS_COLLECTION), {
-		userId: user._id,
+		userId,
 		user: {
-			_id: user._id,
+			_id: userId,
 			name: user.name || 'User',
 			email: user.email || '',
 		},
@@ -127,6 +130,47 @@ export const createOrder = async (payload) => {
 	});
 
 	return { _id: orderRef.id, id: orderRef.id };
+};
+
+export const sendInvoiceEmail = async ({
+	orderId,
+	customer,
+	items,
+	total,
+	payment,
+}) => {
+	const subtotal = Number(total || 0);
+	const shipping = 0;
+	const tax = 0;
+
+	const response = await fetch(`${API_BASE_URL}/orders/send-invoice`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({
+			orderId,
+			customer,
+			items,
+			subtotal,
+			shipping,
+			tax,
+			total: subtotal,
+			payment: payment || {},
+		}),
+	});
+
+	if (!response.ok) {
+		let payload = null;
+		try {
+			payload = await response.json();
+		} catch {
+			payload = null;
+		}
+		throw new Error(payload?.error || 'Failed to send invoice email');
+	}
+
+	return response.json();
 };
 
 export const getAllOrders = async () => {

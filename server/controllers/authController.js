@@ -26,9 +26,9 @@ export const signup = async (req, res) => {
     try {
       await sendMail({
         to: user.email,
-        subject: 'Welcome to Subicharan Textiles!',
-        text: `Hi ${user.name},\n\nThank you for signing up at Subicharan Textiles!`,
-        html: `<p>Hi ${user.name},</p><p>Thank you for signing up at Subicharan Textiles!</p>`
+        subject: 'Welcome to Subitcharan Tex!',
+        text: `Hi ${user.name},\n\nThank you for signing up at Subitcharan Tex!`,
+        html: `<p>Hi ${user.name},</p><p>Thank you for signing up at Subitcharan Tex!</p>`
       });
     } catch (mailErr) {
       console.error('Failed to send welcome email:', mailErr.message);
@@ -76,9 +76,9 @@ export const login = async (req, res) => {
     try {
       await sendMail({
         to: user.email,
-        subject: 'Welcome back to Subicharan Textiles!',
-        text: `Hi ${user.name},\n\nWelcome back to Subicharan Textiles! We are glad to see you again.`,
-        html: `<p>Hi ${user.name},</p><p>Welcome back to <b>Subicharan Textiles</b>! We are glad to see you again.</p>`
+        subject: 'Welcome back to Subitcharan Tex!',
+        text: `Hi ${user.name},\n\nWelcome back to Subitcharan Tex! We are glad to see you again.`,
+        html: `<p>Hi ${user.name},</p><p>Welcome back to <b>Subitcharan Tex</b>! We are glad to see you again.</p>`
       });
     } catch (mailErr) {
       console.error('Failed to send login welcome email:', mailErr.message);

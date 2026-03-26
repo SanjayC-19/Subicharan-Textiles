@@ -47,16 +47,14 @@ export default function SignupPage() {
         role: 'user',
       });
       saveAuth(data.user.uid, data.user);
-      toast.success('Account created!', `Welcome to Subicharan Textiles, ${data.user.name}!`);
+      if (data.welcomeEmailSent) {
+        toast.success('Account created!', `Welcome to Subicharan Textiles, ${data.user.name}!`);
+      } else {
+        toast.warning('Account created', 'Your account is ready, but we could not send the welcome email.');
+      }
       setTimeout(() => navigate('/'), 900);
     } catch (error) {
-      // If Firebase signup succeeded but backend email failed, still complete signup
-      if (error.message && error.message.includes('Failed to create account')) {
-        toast.warning('Signup complete, but welcome email failed', 'Your account was created, but we could not send a welcome email.');
-        setTimeout(() => navigate('/'), 900);
-      } else {
-        toast.error('Registration failed', error.message);
-      }
+      toast.error('Registration failed', error.message);
     } finally {
       setLoading(false);
     }
