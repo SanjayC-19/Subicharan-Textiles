@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import '../../chatbot/chatbot.css';
 
-const SYSTEM_PROMPT = `You are a professional, helpful chatbot for a textile company. Only answer questions related to textiles, fabrics, textile industry, textile care, textile products, textile technology, and textile business. If a question is not related to textiles, politely refuse to answer.`;
+const SYSTEM_PROMPT = `You are a professional, helpful chatbot for a textile company. Always answer ONLY in clear, professional bullet points, never as a paragraph. Each bullet point must start on a new line and be concise, using proper grammar and a businesslike tone. Only answer questions related to textiles, fabrics, textile industry, textile care, textile products, textile technology, and textile business. If a question is not related to textiles, politely refuse to answer. Do not use code formatting, markdown, or code blocks in your answers. Do not provide any paragraph or narrative responses—use bullet points only.`;
 
 
 export default function TextileChatbot({ groqApiKey }) {
@@ -90,9 +90,32 @@ export default function TextileChatbot({ groqApiKey }) {
             </button>
           </div>
           <div className="chatbot-messages">
-            {messages.map((msg, idx) => (
-              <div key={idx} className={`chatbot-msg chatbot-msg-${msg.role}`}>{msg.content}</div>
-            ))}
+            {messages.map((msg, idx) => {
+              // If assistant and message contains bullet points, render as list
+              if (
+                msg.role === 'assistant' &&
+                typeof msg.content === 'string' &&
+                msg.content.trim().startsWith('- ')
+              ) {
+                const points = msg.content
+                  .split(/\r?\n|(?=- )/)
+                  .map(line => line.trim())
+                  .filter(line => line.startsWith('- '));
+                return (
+                  <ul key={idx} className={`chatbot-msg chatbot-msg-${msg.role}`} style={{ paddingLeft: 20, margin: 0 }}>
+                    {points.map((pt, i) => (
+                      <li key={i} style={{listStyleType: 'disc'}}>
+                        {pt.replace(/^\-\s*/, '')}
+                      </li>
+                    ))}
+                  </ul>
+                );
+              }
+              // Otherwise, render as normal
+              return (
+                <div key={idx} className={`chatbot-msg chatbot-msg-${msg.role}`}>{msg.content}</div>
+              );
+            })}
             <div ref={chatEndRef} />
           </div>
           <form className="chatbot-input-row" onSubmit={sendMessage}>
