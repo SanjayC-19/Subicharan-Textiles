@@ -1,16 +1,46 @@
-import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { createOrder, sendInvoiceEmail } from '../services/orderService';
 import { useAuth } from '../context/AuthContext';
 import { auth } from '../../config/Firebase';
-import { ShoppingBag, Loader2 } from 'lucide-react';
+import { ShoppingBag, Loader2, Plus, Minus } from 'lucide-react';
 import RazorpayButton from '../../components/RazorpayButton';
 
 export default function OrderPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
-  const { cartItems, getCartTotal, clearCart } = useCart();
+  const { cartItems, getCartTotal, clearCart, updateQuantity } = useCart();
+
+  // Unified items list for the checkout (either from cart or Buy Now state)
+  const [itemsToOrder, setItemsToOrder] = useState([]);
+
+  useEffect(() => {
+    if (location.state?.singleItem) {
+      // For Buy Now, we use the single item from location state
+      setItemsToOrder([location.state.singleItem]);
+    } else {
+      // For Cart checkout, we use the cart items
+      setItemsToOrder(cartItems);
+    }
+  }, [location.state, cartItems]);
+
+  const handleUpdateQty = (itemId, color, newQty) => {
+    if (newQty < 1) return;
+
+    // Update local state for immediate UI feedback
+    setItemsToOrder(prev => prev.map(item => 
+      (item._id === itemId && item.selectedColor === color)
+      ? { ...item, cartQuantity: newQty }
+      : item
+    ));
+
+    // If it's a cart-based checkout, sync back to the global cart context
+    if (!location.state?.singleItem) {
+      updateQuantity(itemId, color, newQty);
+    }
+  };
 
   const [form, setForm] = useState({
     deliveryAddress: user?.address || '',
@@ -30,7 +60,10 @@ export default function OrderPage() {
     }
   };
 
-  const subtotal = getCartTotal();
+  const subtotal = useMemo(() => {
+    return itemsToOrder.reduce((acc, item) => acc + (item.pricePerMeter * item.cartQuantity), 0);
+  }, [itemsToOrder]);
+  
   const tax = subtotal * 0.05;
   const shipping = subtotal > 5000 ? 0 : 250;
   const grandTotal = subtotal + tax + shipping;
@@ -54,7 +87,7 @@ export default function OrderPage() {
           state: '',
           pincode: '',
         },
-        items: cartItems.map(item => ({
+        items: itemsToOrder.map(item => ({
           name: item.yarnType || item.description || 'Premium Textile',
           category: item.materialCode,
           price: Number(item.pricePerMeter || 0),
@@ -71,7 +104,7 @@ export default function OrderPage() {
     }
   };
 
-  if (cartItems.length === 0) {
+  if (itemsToOrder.length === 0) {
     return (
       <div className="min-h-[60vh] flex flex-col justify-center items-center">
         <ShoppingBag className="w-16 h-16 text-zinc-300 mb-4" />
@@ -102,10 +135,12 @@ export default function OrderPage() {
             </div>
           )}
 
-          <h2 className="text-xl font-serif text-emerald-900 mb-6 font-bold">Review Your Cart</h2>
+          <h2 className="text-xl font-serif text-emerald-900 mb-6 font-bold">
+            Review Your {location.state?.singleItem ? 'Order' : 'Cart'}
+          </h2>
           
           <div className="space-y-4 mb-8 max-h-[300px] overflow-y-auto pr-2">
-            {cartItems.map((item, idx) => (
+            {itemsToOrder.map((item, idx) => (
               <div key={idx} className="flex gap-4 p-4 bg-zinc-50 rounded-xl border border-zinc-100">
                 <div className="h-20 w-20 bg-white rounded-lg overflow-hidden shrink-0 border border-zinc-200">
                   {item.imageURL ? (
@@ -115,11 +150,36 @@ export default function OrderPage() {
                   )}
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-bold text-sm text-zinc-900 leading-tight line-clamp-1">{item.yarnType}</h3>
-                  <p className="text-[10px] uppercase font-bold text-emerald-600 mt-1">{item.materialCode} • {item.selectedColor}</p>
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-bold text-sm text-zinc-900 leading-tight line-clamp-1">{item.yarnType}</h3>
+                    <span className="text-sm font-bold text-emerald-800">₹{(item.pricePerMeter * item.cartQuantity).toLocaleString('en-IN')}</span>
+                  </div>
+                  <p className="text-[10px] uppercase font-bold text-emerald-600 mt-0.5">{item.materialCode} • {item.selectedColor}</p>
+                  
                   <div className="flex justify-between items-center mt-3">
-                    <span className="text-xs font-semibold text-zinc-500">Qty: {item.cartQuantity}</span>
-                    <span className="text-sm font-bold text-zinc-900">₹{(item.pricePerMeter * item.cartQuantity).toLocaleString('en-IN')}</span>
+                    <div className="flex items-center bg-white border border-zinc-200 rounded-lg p-0.5">
+                      <button 
+                        onClick={() => handleUpdateQty(item._id, item.selectedColor, item.cartQuantity - 1)}
+                        className="w-6 h-6 flex items-center justify-center text-zinc-500 hover:text-emerald-700 hover:bg-emerald-50 rounded transition-colors"
+                      >
+                        <Minus size={12} />
+                      </button>
+                      <input 
+                        type="number"
+                        min="1"
+                        value={item.cartQuantity}
+                        onChange={(e) => handleUpdateQty(item._id, item.selectedColor, parseInt(e.target.value) || 1)}
+                        className="w-12 text-center text-xs font-bold text-zinc-900 bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <span className="text-[10px] font-bold text-zinc-400 pr-1.5 pointer-events-none">m</span>
+                      <button 
+                        onClick={() => handleUpdateQty(item._id, item.selectedColor, item.cartQuantity + 1)}
+                        className="w-6 h-6 flex items-center justify-center text-zinc-500 hover:text-emerald-700 hover:bg-emerald-50 rounded transition-colors"
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </div>
+                    <span className="text-[10px] text-zinc-400 font-medium">₹{item.pricePerMeter}/m</span>
                   </div>
                 </div>
               </div>
@@ -166,9 +226,9 @@ export default function OrderPage() {
                   
                   setIsProcessing(true);
                   try {
-                    // Create massive order containing ALL items
+                    // Create order containing selected items
                     const createdOrder = await createOrder({
-                      items: cartItems,
+                      items: itemsToOrder,
                       paymentMethod: 'Razorpay',
                       deliveryAddress: form.deliveryAddress,
                       totalPrice: grandTotal
@@ -181,8 +241,10 @@ export default function OrderPage() {
                       razorpayOrderId: res?.razorpay_order_id,
                     }).catch(err => console.error('Invoice background failed:', err));
                     
-                    // Clear the user's cart
-                    clearCart();
+                    // Clear the user's cart ONLY if they checked out from the cart
+                    if (!location.state?.singleItem) {
+                      clearCart();
+                    }
 
                     // Navigate instantly
                     navigate(`/order-confirmation?id=${createdOrder.id || createdOrder._id}`);

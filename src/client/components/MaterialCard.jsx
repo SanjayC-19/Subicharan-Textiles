@@ -26,9 +26,12 @@ export default function MaterialCard({ material }) {
       navigate('/login?redirect=/checkout');
       return;
     }
-    // Add to cart and immediately go to checkout
-    addToCart(material, 1, material.color);
-    navigate('/checkout');
+    // Navigate to checkout with this single item in state, bypassing the cart
+    navigate('/checkout', { 
+      state: { 
+        singleItem: { ...material, cartQuantity: 1, selectedColor: material.color } 
+      } 
+    });
   };
 
   return (
