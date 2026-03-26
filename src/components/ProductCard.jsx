@@ -55,10 +55,6 @@ export default function ProductCard({ product, className }) {
           >
             <Eye size={15} strokeWidth={1.5} />
           </button>
-          {/* RazorpayButton removed */}
-              alert('Payment failed!');
-            }}
-          />
         </div>
       </div>
 
