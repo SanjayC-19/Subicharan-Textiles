@@ -5,7 +5,7 @@ import { createOrder } from '../services/orderService';
 import { useAuth } from '../context/AuthContext';
 import { CreditCard, Banknote, Landmark, Truck, Loader2, CheckCircle2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-// Removed RazorpayButton import
+import RazorpayButton from '../../components/RazorpayButton';
 
 export default function OrderPage() {
   const { materialId } = useParams();
@@ -148,7 +148,30 @@ export default function OrderPage() {
         <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm">
           <h2 className="text-xl font-bold text-gray-900 mb-6">Payment</h2>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* RazorpayButton removed */}
+            <div className="flex flex-col gap-4">
+  <RazorpayButton amount={total}
+    onSuccess={async (res) => {
+      setIsProcessing(true);
+      try {
+        await createOrder({
+          materialId: material._id,
+          quantity: Number(form.quantity),
+          color: form.color,
+          paymentMethod: 'Razorpay',
+          deliveryAddress: form.deliveryAddress,
+        });
+        setPaymentSuccess(true);
+        setTimeout(() => navigate('/my-orders'), 1500);
+      } catch (err) {
+        setIsProcessing(false);
+        setError('Order failed after payment. ' + err.message);
+      }
+    }}
+    onCancel={(err) => {
+       setError('Payment cancelled or failed');
+    }}
+  /> 
+</div>
           </form>
         </div>
       </div>

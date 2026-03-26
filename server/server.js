@@ -1,63 +1,40 @@
-import 'dotenv/config';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import dotenv from 'dotenv';
+
+// Load server/.env explicitly before other imports
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+
 import cors from 'cors';
 import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-// import mongoose from 'mongoose';
-
-import authRoutes from './routes/authRoutes.js';
-import materialRoutes from './routes/materialRoutes.js';
-import orderRoutes from './routes/orderRoutes.js';
-import userRoutes from './routes/userRoutes.js';
 import razorpayRoutes from './routes/razorpayRoutes.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 5000;
 
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      const allowed = !origin || /^http:\/\/localhost:\d+$/.test(origin);
-      callback(allowed ? null : new Error('Not allowed by CORS'), allowed);
-    },
-  })
-);
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  credentials: true,
+}));
 app.use(express.json());
 
+// Health check
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, service: 'subicharan-tex-api' });
 });
 
-
-console.log('Registering auth routes at /api/auth');
-app.use('/api/auth', authRoutes);
-app.use('/api', materialRoutes);
-app.use('/api', orderRoutes);
-app.use('/api', userRoutes);
+// ── Routes ──────────────────────────────────────────────
 app.use('/api/razorpay', razorpayRoutes);
 
 const startServer = async () => {
   try {
-    if (!process.env.MONGO_URI) {
-      throw new Error('MONGO_URI is missing in .env');
-    }
-    if (!process.env.JWT_SECRET) {
-      throw new Error('JWT_SECRET is missing in .env');
-    }
-
-    // MongoDB connection removed
-
     app.listen(port, () => {
-      console.log(`Server running at http://localhost:${port}`);
+      console.log(`✅ Server running at http://localhost:${port}`);
+      console.log(`   Razorpay Key: ${process.env.RAZORPAY_KEY_ID ? '✓ loaded' : '✗ MISSING — check server/.env'}`);
     });
   } catch (error) {
-    console.error(`Server start failed: ${error.message}`);
+    console.error('Server start failed: ' + error.message);
     process.exit(1);
   }
 };

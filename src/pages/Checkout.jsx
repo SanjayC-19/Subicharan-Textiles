@@ -3,6 +3,7 @@ import { useCart } from '../context/CartContext';
 import { placeOrder } from '../services/productService';
 import { Link } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
+import RazorpayButton from '../components/RazorpayButton';
 
 const FIELDS = [
   { name: 'firstName', label: 'First Name', half: true, required: true },
@@ -18,7 +19,6 @@ const FIELDS = [
 export default function Checkout() {
   const { cartItems, getCartTotal, clearCart } = useCart();
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '', phone: '', address: '', city: '', state: '', pincode: '' });
-  // Removed payment state, only Razorpay is used
   const [status, setStatus] = useState('idle');
   const [orderId, setOrderId] = useState('');
 
@@ -29,7 +29,10 @@ export default function Checkout() {
 
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
-  // Removed handleSubmit, only RazorpayButton is used for payment
+  // Form check
+  const isFormValid = () => {
+    return FIELDS.every(f => form[f.name].trim() !== '');
+  };
 
   if (status === 'success') {
     return (
@@ -40,7 +43,7 @@ export default function Checkout() {
           <p className="font-sans text-sm text-muted-foreground mb-2">Thank you for your purchase.</p>
           <p className="font-sans text-xs text-muted-foreground mb-8">Order ID: <span className="text-foreground">{orderId}</span></p>
           <div className="flex flex-col gap-3">
-            <Link to="/" className="bg-primary text-primary-foreground font-sans text-[11px] tracking-[0.15em] uppercase py-4 hover:bg-primary/85 transition-colors">
+            <Link to="/" className="bg-primary text-primary-foreground font-sans text-[11px] tracking-[0.15em] uppercase py-4 hover:bg-primary/80 transition-colors">
               Return Home
             </Link>
             <Link to="/products" className="border border-border text-foreground font-sans text-[11px] tracking-[0.12em] uppercase py-4 hover:border-primary hover:text-primary transition-colors">
@@ -87,42 +90,66 @@ export default function Checkout() {
           <section>
             <h2 className="font-sans text-[10px] tracking-[0.3em] uppercase text-secondary mb-6">Payment</h2>
             <div className="mt-4">
-              <RazorpayButton
-                amount={total}
-                onSuccess={response => {
-                  setStatus('processing');
-                  placeOrder({ items: cartItems, customer: form, payment: 'razorpay', total, razorpay: response })
-                    .then(id => {
-                      setOrderId(id || `ORD-${Date.now()}`);
-                      clearCart();
-                      setStatus('success');
-                    })
-                    .catch(() => setStatus('error'));
-                }}
-                onError={() => setStatus('error')}
-              />
+              {!isFormValid() ? (
+                <div className="text-sm font-sans text-muted-foreground border border-border p-4">Please fill all shipping details to proceed.</div>
+              ) : (
+                <RazorpayButton
+                  amount={total}
+                  customer={{
+                    name: form.firstName + ' ' + form.lastName,
+                    email: form.email,
+                    phone: form.phone
+                  }}
+                  onSuccess={response => {
+                    setStatus('processing');
+                    placeOrder({ items: cartItems, customer: form, payment: 'razorpay', total, razorpay: response })
+                      .then(id => {
+                        setOrderId(id || ('ORD-' + Date.now()));
+                        clearCart();
+                        setStatus('success');
+                      })
+                      .catch(() => setStatus('error'));
+                  }}
+                  onError={() => setStatus('error')}
+                />
+              )}
             </div>
           </section>
 
           {status === 'error' && (
             <p className="font-sans text-sm text-destructive">Something went wrong. Please try again.</p>
           )}
-        // Removed RazorpayButton import
+
         </div>
 
         {/* Right: Order Summary */}
-              {/* RazorpayButton removed */}
+        <div className="lg:col-span-2">
+          <div className="bg-background border border-border p-6 relative">
+             <h2 className="font-sans text-[10px] tracking-[0.3em] uppercase text-secondary mb-6">Order Summary</h2>
+             <div className="space-y-4 mb-4">
+               {cartItems.map(item => (
+                 <div key={item.id} className="flex gap-4">
+                    <img src={item.image} alt={item.name} className="w-16 h-20 object-cover object-center" />
+                    <div className="flex-1">
+                      <h3 className="font-sans text-sm text-foreground">{item.name}</h3>
+                      <p className="font-sans text-xs text-muted-foreground mt-1">Qty: {item.quantity}</p>
+                    </div>
+                    <div className="font-sans text-sm text-foreground">
+                      ₹{(item.price * item.quantity).toLocaleString('en-IN')}
+                    </div>
+                 </div>
+               ))}
+             </div>
+             
+             <div className="border-t border-border pt-4 space-y-2 font-sans text-sm">
+                <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>₹{subtotal.toLocaleString('en-IN')}</span></div>
+                <div className="flex justify-between text-muted-foreground"><span>Shipping</span><span>{shipping === 0 ? 'Free' : ('₹' + shipping)}</span></div>
+                <div className="flex justify-between text-muted-foreground"><span>GST (5%)</span><span>₹{tax.toLocaleString('en-IN')}</span></div>
+                
+                <div className="flex justify-between font-semibold text-foreground text-base border-t border-border pt-3 mt-3">
+                   <span>Total</span><span>₹{total.toLocaleString('en-IN')}</span>
                 </div>
-              ))}
-            </div>
-            <div className="border-t border-border pt-4 space-y-2 font-sans text-sm">
-              <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>₹{subtotal.toLocaleString('en-IN')}</span></div>
-              <div className="flex justify-between text-muted-foreground"><span>Shipping</span><span>{shipping === 0 ? 'Free' : `₹${shipping}`}</span></div>
-              <div className="flex justify-between text-muted-foreground"><span>GST (5%)</span><span>₹{tax.toLocaleString('en-IN')}</span></div>
-              <div className="flex justify-between font-semibold text-foreground text-base border-t border-border pt-3 mt-3">
-                <span>Total</span><span>₹{total.toLocaleString('en-IN')}</span>
-              </div>
-            </div>
+             </div>
           </div>
         </div>
       </form>
