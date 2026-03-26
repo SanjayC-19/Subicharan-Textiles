@@ -1,0 +1,12 @@
+<svg width="800" height="800" viewBox="0 0 800 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="800" fill="#DDE3ED"/>
+  <circle cx="620" cy="180" r="190" fill="#C1CBDD"/>
+  <circle cx="190" cy="640" r="210" fill="#BBC8DE"/>
+  <path d="M130 270C230 220 330 220 430 270C530 320 630 320 730 270" stroke="#3F4D6B" stroke-width="10" stroke-linecap="round"/>
+  <path d="M110 330C220 280 340 280 450 330C560 380 670 380 780 330" stroke="#4E5E7F" stroke-width="10" stroke-linecap="round"/>
+  <path d="M90 390C210 340 350 340 470 390C590 440 710 440 810 390" stroke="#5D6F92" stroke-width="10" stroke-linecap="round"/>
+  <path d="M70 450C200 400 360 400 490 450C620 500 750 500 830 450" stroke="#6E82A8" stroke-width="10" stroke-linecap="round"/>
+  <path d="M50 510C190 460 370 460 510 510C650 560 780 560 850 510" stroke="#8295BC" stroke-width="10" stroke-linecap="round"/>
+  <rect x="90" y="110" width="240" height="90" fill="#2E3A55"/>
+  <text x="112" y="165" fill="#F4F7FC" font-size="34" font-family="Arial, sans-serif">Contact Us</text>
+</svg>

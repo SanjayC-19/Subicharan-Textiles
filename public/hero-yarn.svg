@@ -1,0 +1,16 @@
+<svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="760" fill="#D7D7D7"/>
+  <rect x="90" y="70" width="1020" height="620" fill="#CFCFCF" stroke="#B9B9B9" stroke-width="2"/>
+  <rect x="130" y="110" width="420" height="540" fill="#B7B7B7"/>
+  <rect x="570" y="110" width="500" height="160" fill="#BBBBBB"/>
+  <rect x="570" y="290" width="500" height="18" fill="#8E8E8E"/>
+  <rect x="570" y="320" width="500" height="18" fill="#8E8E8E"/>
+  <rect x="570" y="350" width="430" height="18" fill="#8E8E8E"/>
+  <rect x="570" y="400" width="500" height="20" fill="#777777"/>
+  <rect x="570" y="430" width="500" height="20" fill="#777777"/>
+  <rect x="570" y="480" width="360" height="64" fill="#4D4D4D"/>
+  <rect x="570" y="560" width="360" height="64" fill="#4D4D4D"/>
+  <text x="150" y="145" fill="#4A4A4A" font-size="26" font-family="Arial, sans-serif">Powerloom Yarn Mill</text>
+  <text x="595" y="185" fill="#3A3A3A" font-size="72" font-weight="700" font-family="Arial, sans-serif">YARN MATERIALS</text>
+  <text x="595" y="250" fill="#3A3A3A" font-size="72" font-weight="700" font-family="Arial, sans-serif">FROM THE MILL</text>
+</svg>

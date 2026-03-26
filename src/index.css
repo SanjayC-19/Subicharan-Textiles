@@ -1,0 +1,119 @@
+@import "tailwindcss";
+@import "./chatbot/chatbot.css";
+
+/* 
+ * Subicharan Tex - Editorial Heritage Design System 
+ * Tailwind CSS v4 
+ */
+
+@theme {
+  /* Elegant, high-contrast typography pairing */
+  --font-serif: "Cormorant Garamond", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  /* Semantic Color Tokens (OKLCH for perceptual uniformity) */
+  --color-background: oklch(98% 0.01 80);
+  --color-foreground: oklch(22% 0.03 18);
+
+  --color-primary: oklch(35% 0.14 20);
+  --color-primary-foreground: oklch(98% 0 0);
+
+  --color-secondary: oklch(78% 0.1 75);
+  --color-secondary-foreground: oklch(20% 0.03 18);
+
+  --color-muted: oklch(93% 0.015 45);
+  --color-muted-foreground: oklch(46% 0.03 24);
+
+  --color-accent: oklch(89% 0.03 58);
+  --color-accent-foreground: oklch(22% 0.03 18);
+
+  --color-border: oklch(84% 0.02 45);
+  --color-ring: oklch(35% 0.14 20);
+
+  --color-card: oklch(99.5% 0.005 80);
+  --color-card-foreground: oklch(22% 0.03 18);
+
+  --color-destructive: oklch(53% 0.22 27);
+  --color-destructive-foreground: oklch(98% 0 0);
+
+  --color-ring-offset: oklch(98.5% 0.005 90);
+
+  /* Radius Tokens - Keeping it slightly rigid for editorial feel */
+  --radius-sm: 0; 
+  --radius-md: 0.125rem;
+  --radius-lg: 0.25rem;
+  --radius-xl: 0.5rem;
+
+  /* GSAP/Tailwind Entry Animation Overrides (Native CSS @starting-style) */
+  --animate-dialog-in: dialog-fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-dialog-out: dialog-fade-out 0.2s ease-in;
+
+  @keyframes dialog-fade-in {
+    from {
+      opacity: 0;
+      transform: scale(0.98) translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  @keyframes dialog-fade-out {
+    from {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.98) translateY(10px);
+    }
+  }
+}
+
+/* Base Editorial Reset */
+@layer base {
+  :root {
+    @apply font-sans text-foreground bg-background antialiased selection:bg-primary selection:text-primary-foreground;
+  }
+  
+  html, body {
+    @apply w-full min-h-screen overflow-x-hidden antialiased text-foreground bg-background;
+  }
+
+  * {
+    @apply border-border;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif font-normal tracking-tight;
+  }
+}
+
+/* Custom Utilities based on skill doc */
+@utility text-balance {
+  text-wrap: balance;
+}
+
+@utility text-gradient {
+  @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
+}
+
+/* Custom Scrollbar for a luxurious feel */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-muted-foreground/30 rounded-full hover:bg-muted-foreground/50 transition-colors;
+}
+
+/* GSAP utility classes */
+.gsap-reveal {
+  opacity: 0;
+  visibility: hidden;
+}
