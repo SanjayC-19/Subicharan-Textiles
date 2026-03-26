@@ -14,11 +14,14 @@ export default function MyOrdersPage() {
         try {
           const userOrders = await getUserOrders(user._id);
           setOrders(userOrders);
+          console.log('Loaded orders:', userOrders);
         } catch (err) {
           console.error('Failed to load orders', err);
         } finally {
           setLoading(false);
         }
+      } else {
+        console.warn('No user._id found:', user);
       }
     };
     load();
@@ -32,6 +35,13 @@ export default function MyOrdersPage() {
       default: return <Clock className="w-5 h-5 text-amber-500" />;
     }
   };
+
+  useEffect(() => {
+    if (!loading) {
+      console.log('User:', user);
+      console.log('Orders:', orders);
+    }
+  }, [loading, user, orders]);
 
   if (loading) {
     return (

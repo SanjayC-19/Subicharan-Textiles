@@ -4,9 +4,10 @@ import { Menu, X, UserCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { cn } from '../../lib/utils';
 
+
 const navLinks = [
   { label: 'Home', href: '/' },
-  { label: 'Contact', href: '/#contact' },
+  { label: 'Contact', href: '/#contact', scrollTo: 'contact' },
 ];
 
 export default function Navbar() {
@@ -95,27 +96,86 @@ export default function Navbar() {
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8 ml-auto mr-6">
             {navLinks.map(link => (
-              <Link
-                key={link.label}
-                to={link.href}
-                className={cn(
-                  'font-sans text-[13px] font-bold tracking-[0.05em] uppercase transition-all duration-300 relative group',
-                  scrolled ? 'text-emerald-900 hover:text-emerald-600' : 'text-white hover:text-emerald-300'
-                )}
-              >
-                {link.label}
-              </Link>
+              link.scrollTo ? (
+                <button
+                  key={link.label}
+                  type="button"
+                  className={cn(
+                    'font-sans text-[13px] font-bold tracking-[0.05em] uppercase transition-all duration-300 relative group bg-transparent border-none outline-none cursor-pointer',
+                    scrolled ? 'text-emerald-900 hover:text-emerald-600' : 'text-white hover:text-emerald-300'
+                  )}
+                  onClick={() => {
+                    if (location.pathname === '/') {
+                      const el = document.getElementById(link.scrollTo);
+                      if (el) {
+                        el.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    } else {
+                      navigate('/');
+                      setTimeout(() => {
+                        const scroll = () => {
+                          const el = document.getElementById(link.scrollTo);
+                          if (el) {
+                            el.scrollIntoView({ behavior: 'smooth' });
+                            window.removeEventListener('popstate', scroll);
+                          } else {
+                            setTimeout(scroll, 100);
+                          }
+                        };
+                        window.addEventListener('popstate', scroll);
+                        scroll();
+                      }, 300);
+                    }
+                  }}
+                >
+                  {link.label}
+                </button>
+              ) : (
+                <Link
+                  key={link.label}
+                  to={link.href}
+                  className={cn(
+                    'font-sans text-[13px] font-bold tracking-[0.05em] uppercase transition-all duration-300 relative group',
+                    scrolled ? 'text-emerald-900 hover:text-emerald-600' : 'text-white hover:text-emerald-300'
+                  )}
+                >
+                  {link.label}
+                </Link>
+              )
             ))}
             {isLoggedIn && !isAdmin && (
-              <Link
-                to="/orders"
+              <button
+                type="button"
                 className={cn(
-                  'font-sans text-[13px] font-bold tracking-[0.05em] uppercase transition-all duration-300 relative group',
+                  'font-sans text-[13px] font-bold tracking-[0.05em] uppercase transition-all duration-300 relative group bg-transparent border-none outline-none cursor-pointer',
                   scrolled ? 'text-emerald-900 hover:text-emerald-600' : 'text-white hover:text-emerald-300'
                 )}
+                onClick={() => {
+                  if (location.pathname === '/orders') {
+                    const el = document.getElementById('orders');
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  } else {
+                    navigate('/orders');
+                    setTimeout(() => {
+                      const scroll = () => {
+                        const el = document.getElementById('orders');
+                        if (el) {
+                          el.scrollIntoView({ behavior: 'smooth' });
+                          window.removeEventListener('popstate', scroll);
+                        } else {
+                          setTimeout(scroll, 100);
+                        }
+                      };
+                      window.addEventListener('popstate', scroll);
+                      scroll();
+                    }, 300);
+                  }
+                }}
               >
                 My Orders
-              </Link>
+              </button>
             )}
             {isLoggedIn && isAdmin && (
               <Link
@@ -200,24 +260,81 @@ export default function Navbar() {
           
           <nav className="flex flex-col gap-2 mt-8">
             {navLinks.map(link => (
-              <Link
-                key={link.label}
-                to={link.href}
-                onClick={() => setMobileOpen(false)}
-                className="block py-4 font-sans text-lg font-bold tracking-wider uppercase border-b border-emerald-100 text-emerald-900 hover:text-emerald-600 hover:pl-2 transition-all"
-              >
-                {link.label}
-              </Link>
+              link.scrollTo ? (
+                <button
+                  key={link.label}
+                  type="button"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    if (location.pathname === '/') {
+                      const el = document.getElementById(link.scrollTo);
+                      if (el) {
+                        el.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    } else {
+                      navigate('/');
+                      setTimeout(() => {
+                        const scroll = () => {
+                          const el = document.getElementById(link.scrollTo);
+                          if (el) {
+                            el.scrollIntoView({ behavior: 'smooth' });
+                            window.removeEventListener('popstate', scroll);
+                          } else {
+                            setTimeout(scroll, 100);
+                          }
+                        };
+                        window.addEventListener('popstate', scroll);
+                        scroll();
+                      }, 300);
+                    }
+                  }}
+                  className="block py-4 font-sans text-lg font-bold tracking-wider uppercase border-b border-emerald-100 text-emerald-900 hover:text-emerald-600 hover:pl-2 transition-all bg-transparent border-none outline-none cursor-pointer"
+                >
+                  {link.label}
+                </button>
+              ) : (
+                <Link
+                  key={link.label}
+                  to={link.href}
+                  onClick={() => setMobileOpen(false)}
+                  className="block py-4 font-sans text-lg font-bold tracking-wider uppercase border-b border-emerald-100 text-emerald-900 hover:text-emerald-600 hover:pl-2 transition-all"
+                >
+                  {link.label}
+                </Link>
+              )
             ))}
             
             {isLoggedIn && !isAdmin && (
-              <Link
-                to="/orders"
-                onClick={() => setMobileOpen(false)}
-                className="block py-4 font-sans text-lg font-bold tracking-wider uppercase border-b border-emerald-100 text-emerald-900 hover:text-emerald-600 hover:pl-2 transition-all"
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileOpen(false);
+                  if (location.pathname === '/orders') {
+                    const el = document.getElementById('orders');
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  } else {
+                    navigate('/orders');
+                    setTimeout(() => {
+                      const scroll = () => {
+                        const el = document.getElementById('orders');
+                        if (el) {
+                          el.scrollIntoView({ behavior: 'smooth' });
+                          window.removeEventListener('popstate', scroll);
+                        } else {
+                          setTimeout(scroll, 100);
+                        }
+                      };
+                      window.addEventListener('popstate', scroll);
+                      scroll();
+                    }, 300);
+                  }
+                }}
+                className="block py-4 font-sans text-lg font-bold tracking-wider uppercase border-b border-emerald-100 text-emerald-900 hover:text-emerald-600 hover:pl-2 transition-all bg-transparent border-none outline-none cursor-pointer"
               >
                 My Orders
-              </Link>
+              </button>
             )}
 
             {isLoggedIn && isAdmin && (
