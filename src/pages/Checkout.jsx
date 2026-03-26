@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useCart } from '../context/CartContext';
-import { placeOrder } from '../services/productService';
-import { Link } from 'react-router-dom';
+import { saveOrder } from '../services/orderService';
+import { useNavigate, Link } from 'react-router-dom';
+
 import { CheckCircle, Mail } from 'lucide-react';
 import RazorpayButton from '../components/RazorpayButton';
 
@@ -28,6 +29,9 @@ const FIELDS = [
 
 export default function Checkout() {
   const { cartItems, getCartTotal, clearCart } = useCart();
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem('authUser'));
+
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '', phone: '',
     address: '', city: '', state: '', pincode: '',
@@ -92,43 +96,57 @@ export default function Checkout() {
       setEmailSent(false);
     }
 
+    // 3. Save order to Firestore
+    try {
+      await saveOrder({
+        orderId: finalId,
+        userId: user?.uid || 'guest',
+        customer: {
+          name:    form.firstName + ' ' + form.lastName,
+          email:   form.email,
+          phone:   form.phone,
+          address: form.address,
+          city:    form.city,
+          state:   form.state,
+          pincode: form.pincode,
+        },
+        items: cartItems.map(item => ({
+          name:     item.name,
+          category: item.category,
+          price:    item.price,
+          quantity: item.quantity,
+          imageURL: item.imageURL || item.image,
+        })),
+        subtotal,
+        shipping,
+        tax,
+        total,
+        payment: {
+          razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+          razorpay_order_id:   razorpayResponse.razorpay_order_id,
+        },
+      });
+    } catch (err) {
+      console.error('Failed to save order to DB:', err);
+      // We still proceed since payment was successful and email might have sent
+    }
+
     clearCart();
     setStatus('success');
+    // Short delay to show the success state before redirecting
+    setTimeout(() => {
+      navigate(`/order-confirmation?id=${finalId}`);
+    }, 1500);
   };
+
 
   // ── Success screen ──────────────────────────────────────
   if (status === 'success') {
     return (
-      <main className="pt-24 min-h-screen bg-background flex items-center justify-center px-6">
-        <div className="max-w-sm w-full text-center">
-          <CheckCircle size={48} strokeWidth={1} className="mx-auto text-secondary mb-6" />
-          <h2 className="font-serif text-3xl text-foreground mb-3">Order Placed!</h2>
-          <p className="font-sans text-sm text-muted-foreground mb-1">Thank you for your purchase.</p>
-          <p className="font-sans text-xs text-muted-foreground mb-4">
-            Order ID: <span className="text-foreground font-medium">{orderId}</span>
-          </p>
-
-          {/* Email status badge */}
-          {emailSent ? (
-            <div className="flex items-center justify-center gap-2 text-xs font-sans text-secondary border border-secondary/30 bg-secondary/5 rounded px-3 py-2 mb-8">
-              <Mail size={13} />
-              Invoice sent to <span className="font-medium">{form.email}</span>
-            </div>
-          ) : (
-            <p className="font-sans text-xs text-muted-foreground mb-8">
-              (Invoice email could not be sent — please save your Order ID.)
-            </p>
-          )}
-
-          <div className="flex flex-col gap-3">
-            <Link to="/" className="bg-primary text-primary-foreground font-sans text-[11px] tracking-[0.15em] uppercase py-4 hover:bg-primary/80 transition-colors">
-              Return Home
-            </Link>
-            <Link to="/products" className="border border-border text-foreground font-sans text-[11px] tracking-[0.12em] uppercase py-4 hover:border-primary hover:text-primary transition-colors">
-              Keep Shopping
-            </Link>
-          </div>
-        </div>
+      <main className="pt-24 min-h-screen bg-emerald-50/20 flex flex-col items-center justify-center px-6">
+        <div className="w-16 h-16 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mb-6"></div>
+        <h2 className="font-serif text-2xl text-emerald-900 mb-2 tracking-tight">Payment Verified</h2>
+        <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-emerald-600/60 animate-pulse font-bold">Curating your confirmation experience...</p>
       </main>
     );
   }

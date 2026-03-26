@@ -20,6 +20,9 @@ import Checkout from './pages/Checkout';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Profile from './pages/Profile';
+import OrderConfirmation from './pages/OrderConfirmation';
+import MyOrders from './pages/MyOrders';
+
 
 // Admin
 import AddProduct from './admin/AddProduct';
@@ -49,6 +52,9 @@ const App = () => {
               <Route path="/signup" element={<Signup />} />
               {/* Profiles */}
               <Route path="/profile/:role" element={<Profile />} />
+              <Route path="/order-confirmation" element={<OrderConfirmation />} />
+              <Route path="/my-orders" element={<MyOrders />} />
+
               {/* Admin Portal */}
               <Route path="/admin/add-product" element={<AddProduct />} />
             </Routes>

@@ -1,17 +1,34 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ShoppingBag, ArrowRight } from 'lucide-react';
+import { useCart } from '../context/CartContext';
+import { useToast } from '../context/ToastContext';
+import { ShoppingBag, ArrowRight, ShoppingCart } from 'lucide-react';
 
 export default function MaterialCard({ material }) {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
+  const { addToCart } = useCart();
+  const toast = useToast();
 
-  const handleBuy = () => {
+  const handleAddToCart = (e) => {
+    e.stopPropagation();
     if (!isLoggedIn) {
       navigate('/login');
       return;
     }
-    navigate(`/order/${material._id}`);
+    addToCart(material, 1, material.color);
+    toast.success('Added to Cart', `${material.yarnType || 'Item'} has been added to your cart.`);
+  };
+
+  const handleBuy = (e) => {
+    e.stopPropagation();
+    if (!isLoggedIn) {
+      navigate('/login?redirect=/checkout');
+      return;
+    }
+    // Add to cart and immediately go to checkout
+    addToCart(material, 1, material.color);
+    navigate('/checkout');
   };
 
   return (
@@ -59,15 +76,24 @@ export default function MaterialCard({ material }) {
         </div>
       </div>
       
-      <button
-        type="button"
-        onClick={handleBuy}
-        className="w-full flex items-center justify-center gap-2 bg-zinc-50 hover:bg-emerald-600 text-zinc-700 hover:text-white py-4 text-xs font-bold tracking-[0.1em] uppercase transition-all duration-300 group-hover:bg-emerald-600 group-hover:text-white border-t border-zinc-100 group-hover:border-emerald-600"
-      >
-        <ShoppingBag size={14} className="group-hover:-translate-y-0.5 transition-transform duration-300" />
-        <span>Place Order</span>
-        <ArrowRight size={14} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
-      </button>
+      <div className="flex border-t border-zinc-100">
+        <button
+          type="button"
+          onClick={handleAddToCart}
+          className="flex-1 flex flex-col items-center justify-center gap-1.5 bg-zinc-50 hover:bg-emerald-50 text-emerald-700 py-3 text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-colors border-r border-zinc-100"
+        >
+          <ShoppingCart size={16} />
+          <span>Add to Cart</span>
+        </button>
+        <button
+          type="button"
+          onClick={handleBuy}
+          className="flex-1 flex flex-col items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white py-3 text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-colors"
+        >
+          <ShoppingBag size={16} />
+          <span>Buy Now</span>
+        </button>
+      </div>
     </div>
   );
 }

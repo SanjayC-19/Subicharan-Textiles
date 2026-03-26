@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, UserCircle, ArrowLeft } from 'lucide-react';
+import { Menu, X, UserCircle, ArrowLeft, ShoppingCart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import { cn } from '../../lib/utils';
 
 
@@ -13,6 +14,8 @@ const navLinks = [
 export default function Navbar() {
   const navigate = useNavigate();
   const { isLoggedIn, isAdmin } = useAuth();
+  const { getCartCount } = useCart();
+  const cartCount = getCartCount();
   
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -206,6 +209,30 @@ export default function Navbar() {
               </Link>
             ) : null}
 
+            {/* Cart Icon */}
+            {!isAdmin && (
+              <Link
+                to="/cart"
+                className={cn(
+                  "relative h-10 w-10 rounded-full flex items-center justify-center transition-colors",
+                  scrolled 
+                    ? "text-emerald-800 hover:bg-emerald-50" 
+                    : "text-white hover:bg-white/10"
+                )}
+                aria-label="Shopping Cart"
+              >
+                <ShoppingCart size={22} />
+                {cartCount > 0 && (
+                  <span className={cn(
+                    "absolute top-1 right-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-rose-500 text-[9px] font-bold text-white",
+                    scrolled ? "shadow-[0_0_0_2px_theme(colors.white)]" : "shadow-[0_0_0_2px_theme(colors.emerald.900)]"
+                  )}>
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </span>
+                )}
+              </Link>
+            )}
+
             <button
               type="button"
               onClick={handleProfileClick}
@@ -354,6 +381,22 @@ export default function Navbar() {
                 className="block py-4 font-sans text-lg font-bold tracking-wider uppercase border-b border-emerald-100 text-emerald-900 hover:text-emerald-600 hover:pl-2 transition-all"
               >
                 Login
+              </Link>
+            )}
+
+            {/* Mobile Cart Link */}
+            {!isAdmin && (
+              <Link
+                to="/cart"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center justify-between py-4 font-sans text-lg font-bold tracking-wider uppercase border-b border-emerald-100 text-emerald-900 hover:text-emerald-600 hover:pl-2 transition-all"
+              >
+                <span>Shopping Cart</span>
+                {cartCount > 0 && (
+                  <span className="flex h-6 px-2 items-center justify-center rounded-full bg-rose-100 text-rose-700 text-sm font-bold">
+                    {cartCount} {cartCount === 1 ? 'Item' : 'Items'}
+                  </span>
+                )}
               </Link>
             )}
           </nav>

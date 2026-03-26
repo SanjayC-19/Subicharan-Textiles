@@ -1,7 +1,7 @@
-import TextileChatbot from './components/TextileChatbot';
-import { BrowserRouter, Navigate, Route, Routes, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import TextileChatbot from './components/TextileChatbot';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminLayout from './components/AdminLayout';
 import HomePage from './pages/HomePage';
@@ -11,95 +11,125 @@ import SignupPage from './pages/SignupPage';
 import ProfilePage from './pages/ProfilePage';
 import MyOrdersPage from './pages/MyOrdersPage';
 import OrderPage from './pages/OrderPage';
+import OrderConfirmationPage from './pages/OrderConfirmationPage';
+import TrackOrderPage from './pages/TrackOrderPage';
 import CollectionsPage from './pages/CollectionsPage';
+import CartPage from './pages/CartPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminMaterialsPage from './pages/AdminMaterialsPage';
 import AdminOrdersPage from './pages/AdminOrdersPage';
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
+import { CartProvider } from './context/CartContext';
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <AuthProvider>
-        <ToastProvider>
-          <TextileChatbot groqApiKey={import.meta.env.VITE_GROQ_API_KEY} />
-          <Routes>
-            {/* Admin Login Route */}
-            <Route path="/admin/login" element={<AdminLoginPage />} />
+        <CartProvider>
+          <ToastProvider>
+            <TextileChatbot groqApiKey={import.meta.env.VITE_GROQ_API_KEY} />
+            <Routes>
+              {/* Admin Login Route */}
+              <Route path="/admin/login" element={<AdminLoginPage />} />
 
-            {/* Admin Routes */}
-            <Route
-              path="/admin"
-              element={(
-                <ProtectedRoute adminOnly>
-                  <AdminLayout />
-                </ProtectedRoute>
-              )}
-            >
-              <Route path="dashboard" element={<AdminDashboardPage />} />
-              <Route path="materials" element={<AdminMaterialsPage />} />
-              <Route path="orders" element={<AdminOrdersPage />} />
-              <Route index element={<Navigate to="dashboard" replace />} />
-            </Route>
-
-            {/* Client Routes */}
-            <Route
-              path="/"
-              element={(
-                <div className="min-h-screen bg-background text-foreground flex flex-col">
-                  <Navbar />
-                  <main className="flex-1 pt-24 pb-10">
-                    <Outlet />
-                  </main>
-                  <Footer />
-                </div>
-              )}
-            >
-              {/* Home requires login — opens login page first when not authenticated */}
+              {/* Admin Routes */}
               <Route
-                index
+                path="/admin"
                 element={(
-                  <ProtectedRoute>
-                    <HomePage />
+                  <ProtectedRoute adminOnly>
+                    <AdminLayout />
                   </ProtectedRoute>
                 )}
-              />
-              <Route path="collections" element={<CollectionsPage />} />
-              <Route path="login" element={<LoginPage />} />
-              <Route path="signup" element={<SignupPage />} />
+              >
+                <Route path="dashboard" element={<AdminDashboardPage />} />
+                <Route path="materials" element={<AdminMaterialsPage />} />
+                <Route path="orders" element={<AdminOrdersPage />} />
+                <Route index element={<Navigate to="dashboard" replace />} />
+              </Route>
 
+              {/* Client Routes */}
               <Route
-                path="profile"
+                path="/"
                 element={(
-                  <ProtectedRoute>
-                    <ProfilePage />
-                  </ProtectedRoute>
+                  <div className="min-h-screen bg-background text-foreground flex flex-col">
+                    <Navbar />
+                    <main className="flex-1 pt-24 pb-10">
+                      <Outlet />
+                    </main>
+                    <Footer />
+                  </div>
                 )}
-              />
-              <Route
-                path="orders"
-                element={(
-                  <ProtectedRoute>
-                    <MyOrdersPage />
-                  </ProtectedRoute>
-                )}
-              />
-              <Route
-                path="order/:materialId"
-                element={(
-                  <ProtectedRoute>
-                    <OrderPage />
-                  </ProtectedRoute>
-                )}
-              />
-            </Route>
+              >
+                {/* Home requires login — opens login page first when not authenticated */}
+                <Route
+                  index
+                  element={(
+                    <ProtectedRoute>
+                      <HomePage />
+                    </ProtectedRoute>
+                  )}
+                />
+                <Route path="collections" element={<CollectionsPage />} />
+                <Route path="cart" element={<CartPage />} />
+                <Route path="login" element={<LoginPage />} />
+                <Route path="signup" element={<SignupPage />} />
 
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </ToastProvider>
+                <Route
+                  path="profile"
+                  element={(
+                    <ProtectedRoute>
+                      <ProfilePage />
+                    </ProtectedRoute>
+                  )}
+                />
+                <Route
+                  path="orders"
+                  element={(
+                    <ProtectedRoute>
+                      <MyOrdersPage />
+                    </ProtectedRoute>
+                  )}
+                />
+                <Route
+                  path="order/:materialId"
+                  element={(
+                    <ProtectedRoute>
+                      <OrderPage />
+                    </ProtectedRoute>
+                  )}
+                />
+                <Route
+                  path="checkout"
+                  element={(
+                    <ProtectedRoute>
+                      <OrderPage />
+                    </ProtectedRoute>
+                  )}
+                />
+                <Route
+                  path="order-confirmation"
+                  element={(
+                    <ProtectedRoute>
+                      <OrderConfirmationPage />
+                    </ProtectedRoute>
+                  )}
+                />
+                <Route
+                  path="track-order/:orderId"
+                  element={(
+                    <ProtectedRoute>
+                      <TrackOrderPage />
+                    </ProtectedRoute>
+                  )}
+                />
+              </Route>
+
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </ToastProvider>
+        </CartProvider>
       </AuthProvider>
-    </BrowserRouter>
+    </Router>
   );
 }
-

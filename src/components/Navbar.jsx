@@ -4,18 +4,22 @@ import { ShoppingBag, Menu, X } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { cn } from '../lib/utils';
 
-const navLinks = [
-  { label: 'Home', to: '/' },
-  { label: 'Products', to: '/products' },
-  { label: 'Contact', to: '/contact' },
-];
 
 export default function Navbar() {
+
   const { getCartCount } = useCart();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const cartCount = getCartCount();
+  const navLinks = [
+    { label: 'Home', to: '/' },
+    { label: 'Products', to: '/products' },
+    { label: 'Contact', to: '/contact' },
+    { label: 'My Orders', to: '/my-orders' },
+  ];
+
+
 
   // Close mobile on route change
   useEffect(() => {
@@ -71,6 +75,8 @@ export default function Navbar() {
           {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center gap-10 ml-auto mr-8">
             {navLinks.map(link => (
+
+
               <NavLink
                 key={link.label}
                 to={link.to}
@@ -147,6 +153,8 @@ export default function Navbar() {
           
           <nav className="flex flex-col gap-2 mt-8">
             {navLinks.map(link => (
+
+
               <NavLink
                 key={link.label}
                 to={link.to}

@@ -23,7 +23,19 @@ const normalizeOrder = (docSnap) => {
 	const createdAt = createdAtRaw?.toDate ? createdAtRaw.toDate().toISOString() : new Date(0).toISOString();
 
 	const userId = data.user || {};
-	const materialSnapshot = data.materialSnapshot || {};
+
+	// Convert legacy single-item schema to items array
+	const items = data.items || [];
+	if (items.length === 0 && data.materialId) {
+		items.push({
+			materialId: data.materialId,
+			materialCode: data.materialSnapshot?.materialCode || 'N/A',
+			yarnType: data.materialSnapshot?.yarnType || 'Item',
+			color: data.color || data.materialSnapshot?.color || 'N/A',
+			pricePerMeter: Number(data.materialSnapshot?.pricePerMeter || 0),
+			quantity: Number(data.quantity || 0),
+		});
+	}
 
 	return {
 		_id: docSnap.id,
@@ -33,15 +45,7 @@ const normalizeOrder = (docSnap) => {
 			name: userId.name || 'Guest User',
 			email: userId.email || '',
 		},
-		materialId: {
-			_id: data.materialId || '',
-			materialCode: materialSnapshot.materialCode || 'N/A',
-			yarnType: materialSnapshot.yarnType || 'Item',
-			pricePerMeter: Number(materialSnapshot.pricePerMeter || 0),
-			color: materialSnapshot.color || data.color || 'N/A',
-		},
-		quantity: Number(data.quantity || 0),
-		color: data.color || materialSnapshot.color || 'N/A',
+		items,
 		paymentMethod: data.paymentMethod || 'N/A',
 		deliveryAddress: data.deliveryAddress || '',
 		totalPrice: Number(data.totalPrice || 0),
@@ -61,8 +65,8 @@ const readStoredUser = () => {
 };
 
 export const createOrder = async (payload) => {
-	const { materialId, quantity, color, paymentMethod, deliveryAddress } = payload;
-	if (!materialId || !quantity || !color || !paymentMethod || !deliveryAddress) {
+	const { items, paymentMethod, deliveryAddress, totalPrice } = payload;
+	if (!items || items.length === 0 || !paymentMethod || !deliveryAddress) {
 		throw new Error('All order fields are required');
 	}
 
@@ -72,38 +76,59 @@ export const createOrder = async (payload) => {
 		throw new Error('Please log in before placing an order.');
 	}
 
-	const materialRef = doc(db, MATERIALS_COLLECTION, materialId);
-	const materialSnap = await getDoc(materialRef);
-	if (!materialSnap.exists()) {
-		throw new Error('Material not found');
-	}
-
-	const material = materialSnap.data();
-	const qty = Number(quantity);
-	const currentStock = Number(material.stock || 0);
-	if (currentStock < qty) {
-		throw new Error('Insufficient stock');
-	}
-
-	const totalPrice = Number(material.pricePerMeter || 0) * qty;
+	const materialRefs = items.map(item => doc(db, MATERIALS_COLLECTION, item._id));
 
 	await runTransaction(db, async (transaction) => {
-		const latestSnap = await transaction.get(materialRef);
-		if (!latestSnap.exists()) {
-			throw new Error('Material not found');
-		}
+		// Read all documents first to lock them
+		const snaps = await Promise.all(materialRefs.map(ref => transaction.get(ref)));
 
-		const latest = latestSnap.data();
-		const latestStock = Number(latest.stock || 0);
-		if (latestStock < qty) {
-			throw new Error('Insufficient stock');
-		}
+		// Verify stock
+		snaps.forEach((snap, idx) => {
+			if (!snap.exists()) {
+				throw new Error(`Material ${items[idx].yarnType} not found in database.`);
+			}
+			const currentStock = Number(snap.data().stock || 0);
+			const qty = Number(items[idx].cartQuantity || 0);
+			if (currentStock < qty) {
+				throw new Error(`Insufficient stock for ${items[idx].yarnType}.`);
+			}
+		});
 
-		transaction.update(materialRef, {
-			stock: latestStock - qty,
-			updatedAt: serverTimestamp(),
+		// Write updates
+		snaps.forEach((snap, idx) => {
+			const latest = snap.data();
+			const latestStock = Number(latest.stock || 0);
+			const qty = Number(items[idx].cartQuantity || 0);
+			const newStock = latestStock - qty;
+
+			transaction.update(snap.ref, {
+				stock: newStock,
+				updatedAt: serverTimestamp(),
+			});
+
+			if (latestStock >= 500 && newStock < 500) {
+				fetch(`${API_BASE_URL}/alerts/low-stock`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						materialCode: latest.materialCode || 'N/A',
+						yarnType: latest.yarnType || 'Item',
+						color: latest.color || items[idx].selectedColor,
+						stock: newStock,
+					}),
+				}).catch(err => console.error('Failed to send low stock alert:', err));
+			}
 		});
 	});
+
+	const formattedItems = items.map(item => ({
+		materialId: item._id,
+		materialCode: item.materialCode || 'N/A',
+		yarnType: item.yarnType || 'Item',
+		color: item.selectedColor || 'N/A',
+		pricePerMeter: Number(item.pricePerMeter || 0),
+		quantity: Number(item.cartQuantity || 0),
+	}));
 
 	const orderRef = await addDoc(collection(db, ORDERS_COLLECTION), {
 		userId,
@@ -112,18 +137,10 @@ export const createOrder = async (payload) => {
 			name: user.name || 'User',
 			email: user.email || '',
 		},
-		materialId,
-		materialSnapshot: {
-			materialCode: material.materialCode || 'N/A',
-			yarnType: material.yarnType || 'Item',
-			pricePerMeter: Number(material.pricePerMeter || 0),
-			color: material.color || color,
-		},
-		quantity: qty,
-		color,
+		items: formattedItems,
 		paymentMethod,
 		deliveryAddress,
-		totalPrice,
+		totalPrice: Number(totalPrice || 0),
 		orderStatus: 'Pending',
 		createdAt: serverTimestamp(),
 		updatedAt: serverTimestamp(),
@@ -178,6 +195,15 @@ export const getAllOrders = async () => {
 	return snapshot.docs
 		.map(normalizeOrder)
 		.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+};
+
+export const getOrderByOrderId = async (orderId) => {
+	if (!orderId) return null;
+	const docRef = doc(db, ORDERS_COLLECTION, orderId);
+	const docSnap = await getDoc(docRef);
+	
+	if (!docSnap.exists()) return null;
+	return normalizeOrder(docSnap);
 };
 
 export const getUserOrders = async (userId) => {
