@@ -30,6 +30,17 @@ app.get('/api/health', (req, res) => {
 app.use('/api/razorpay', razorpayRoutes);
 app.use('/api', emailRoutes);
 
+// ── Production Frontend Serving ──────────────────────────────
+// Serve static files from the "dist" folder (created by vite build)
+const distPath = path.resolve(__dirname, '../dist');
+app.use(express.static(distPath));
+
+// Handle React Router SPA: serve index.html for all non-API routes
+app.get('*', (req, res) => {
+  if (req.path.startsWith('/api')) return; // let 404s for API stay as 404s
+  res.sendFile(path.join(distPath, 'index.html'));
+});
+
 const startServer = async () => {
   try {
     app.listen(port, () => {

@@ -4,6 +4,7 @@ import { generateInvoiceHTML } from '../templates/invoiceEmail.js';
 import { generateWelcomeHTML } from '../templates/welcomeEmail.js';
 
 const router = express.Router();
+const ADMIN_EMAILS = ['sanjayc.23aim@kongu.edu', 'sanjaycs1902@gmail.com'];
 
 /**
  * POST /api/orders/send-invoice
@@ -114,7 +115,7 @@ router.post('/alerts/low-stock', async (req, res) => {
 
     const info = await transporter.sendMail({
       from: `"Subicharan System Alerts" <${process.env.EMAIL_USER}>`,
-      to: 'sanjayc.23aim@kongu.edu',
+      to: ADMIN_EMAILS,
       subject: `URGENT: Low Stock (${stock}m left) - ${materialCode}`,
       html,
     });
